@@ -11,7 +11,7 @@ class CPU:
         self.pc = 0                 # program counter
         # self.halted = False         # if halted or not (T/F)
         self.sp = 7                 # stack pointer
-        self.running = True
+        self.running = True         # if running or not (T/F)
 
     def ram_read(self, address):
         return self.ram[address]
@@ -35,8 +35,8 @@ class CPU:
                 num = line_split[0].strip()
                 if num == "":
                     continue
-                val = int(num, 2)
-                self.ram[address] = val
+                value = int(num, 2)
+                self.ram[address] = value
 
                 address += 1
 
@@ -99,7 +99,12 @@ class CPU:
         LDI = 0b10000010
         PRN = 0b01000111
         HLT = 0b00000001
+        ADD = 0b10100000
+        SUB = 0b10100001
         MUL = 0b10100010
+        DIV = 0b10100011
+        PUSH = 0b01000101
+        POP = 0b01000110
 
         while self.running:
         # Stores the result in "Instruction Register" from the memory (RAM) address in PC
@@ -110,8 +115,17 @@ class CPU:
                 value = self.ram[self.pc + 2]
                 self.register[address] = value
                 self.pc += 3
+            elif ir == ADD:
+                self.alu("ADD", self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.pc += 3
+            elif ir == SUB:
+                self.alu("SUB", self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.pc += 3
             elif ir == MUL:
                 self.alu("MUL", self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.pc += 3
+            elif ir == DIV:
+                self.alu("DIV", self.ram[self.pc + 1], self.ram[self.pc + 2])
                 self.pc += 3
             # `PRN` instruction (EX: PRINT_REG in comp.py)
             elif ir == PRN:
@@ -122,6 +136,16 @@ class CPU:
             elif ir == HLT:
                 self.running = False
                 self.pc += 1
+            elif ir == PUSH:
+                self.sp = self.sp - 1
+                self.ram[self.sp] = self.register[self.ram[self.pc + 1]]
+                self.pc += 2
+            elif ir == POP:
+                if self.sp == 0xF4:
+                    return "Stack is empty."
+                self.register[self.ram[self.pc + 1]] = self.ram[self.sp]
+                self.sp = self.sp + 1
+                self.pc += 2
         # ELSE STATEMENT from comp.py
             else:
                 print(f'Unknown instruction {ir} at address {self.pc}')
