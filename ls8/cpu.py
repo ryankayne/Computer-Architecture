@@ -61,8 +61,13 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+            self.register[reg_a] += self.register[reg_b]
+        elif op == "SUB":
+            self.register[reg_a] -= self.register[reg_b]
+        elif op == "MUL":
+            self.register[reg_a] *= self.register[reg_b]
+        elif op == "DIV":
+            self.register[reg_a] /= self.register[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -94,6 +99,7 @@ class CPU:
         LDI = 0b10000010
         PRN = 0b01000111
         HLT = 0b00000001
+        MUL = 0b10100010
 
         while self.running:
         # Stores the result in "Instruction Register" from the memory (RAM) address in PC
@@ -103,6 +109,9 @@ class CPU:
                 address = self.ram[self.pc + 1]
                 value = self.ram[self.pc + 2]
                 self.register[address] = value
+                self.pc += 3
+            elif ir == MUL:
+                self.alu("MUL", self.ram[self.pc + 1], self.ram[self.pc + 2])
                 self.pc += 3
             # `PRN` instruction (EX: PRINT_REG in comp.py)
             elif ir == PRN:
