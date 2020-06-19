@@ -37,20 +37,25 @@ class CPU:
 
         # address = 0
 
-        # with open(file,'r') as f:
-        #     all_lines = f.readlines()
-
+        # take the input file as f and open it
         with open(file) as f:
             address = 0
-
+            
+            # for every iteration/line in file,
             for line in f:
+                # split the line by the # symbol
                 line_split = line.split("#")
+                # take the first item of the split and assign it to num (and also strip the extra spaces)
                 num = line_split[0].strip()
+                # if num is empty string, continue
                 if num == "":
                     continue
+                # turn num into a base 2 integer and assign it to value
                 value = int(num, 2)
+                # set the value to memory at the address (initial 0)
                 self.ram[address] = value
 
+                # increment the address to the next slot
                 address += 1
 
         # For now, we've just hardcoded a program:
@@ -70,7 +75,7 @@ class CPU:
         #     address += 1
 
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, op, reg_a, reg_b):    # Arithmetic Logic Unit
         """ALU operations."""
 
         if op == "ADD":
@@ -116,83 +121,83 @@ class CPU:
         #     ir = self.ram[self.pc]
         
         ## change all the self.ram pc+1 to operand_a, and self.ram pc+2 to operand_b
-        def handleLDI(operand_a, operand_b):
+        def handle_LDI(operand_a, operand_b):   # Set the value(op_b) of a register to an integer (op_a).
             # address = self.ram[self.pc + 1]
             # value = self.ram[self.pc + 2]
             self.register[operand_a] = operand_b
             self.pc += 3
 
-        def handleADD(operand_a, operand_b):
+        def handle_ADD(operand_a, operand_b):   # Add the value in two registers and store the result in registerA.
             # self.alu("ADD", self.ram[self.pc + 1], self.ram[self.pc + 2])
             value1 = self.register[operand_a]
             value2 = self.register[operand_b]
             self.register[operand_a] = value1 + value2
             self.pc += 3
 
-        def handleSUB(operand_a, operand_b):
+        def handle_SUB(operand_a, operand_b):   # Subtract the value in the second register from the first, storing the result in registerA.
             # self.alu("SUB", self.ram[self.pc + 1], self.ram[self.pc + 2])
             value1 = self.register[operand_a]
             value2 = self.register[operand_b]
             self.register[operand_a] = value1 - value2
             self.pc += 3
 
-        def handleMUL(operand_a, operand_b):
+        def handle_MUL(operand_a, operand_b):   # Multiply the values in two registers together and store the result in registerA.
             # self.alu("MUL", self.ram[self.pc + 1], self.ram[self.pc + 2])
             value1 = self.register[operand_a]
             value2 = self.register[operand_b]
             self.register[operand_a] = value1 * value2
             self.pc += 3
 
-        def handleDIV(operand_a, operand_b):
+        def handle_DIV(operand_a, operand_b):   # Divide the value in the first register by the value in the second, storing the result in registerA.
             # self.alu("DIV", self.ram[self.pc + 1], self.ram[self.pc + 2])
             value1 = self.register[operand_a]
             value2 = self.register[operand_b]
             self.register[operand_a] = value1 / value2
             self.pc += 3
 
-        def handlePRN(operand_a, operand_b=None):
+        def handle_PRN(operand_a, operand_b=None):  # Print numeric value stored in the given register. Print to the console the decimal integer value that is stored in the given register.
             # address = self.ram[self.pc + 1]
             print(self.register[operand_a])
             self.pc += 2
 
-        def handlePUSH(operand_a=None, operand_b=None):
+        def handle_PUSH(operand_a=None, operand_b=None):    # Push the value in the given register on the stack.
             register = self.ram_read(self.pc + 1)
             value = self.register[register]
-            self.sp = self.sp - 1
-            self.ram[self.sp] = value
+            self.sp -= 1    # Decrement the SP.
+            self.ram[self.sp] = value   # Copy the value in the given register to the address pointed to by SP.
             self.pc += 2
 
-        def handlePOP(operand_a=None, operand_b=None):
+        def handle_POP(operand_a=None, operand_b=None): # Pop the value at the top of the stack into the given register.
             # if self.sp == 0xF4:
             #     return "Stack is empty."
             register = self.ram_read(self.pc + 1)
             value = self.ram[self.sp]
-            self.register[register] = value
-            self.sp += 1
+            self.register[register] = value # Copy the value from the address pointed to by SP to the given register.
+            self.sp += 1    # Increment SP.
             self.pc += 2
 
-        def handleCALL(operand_a, operand_b):
-            index_call = self.register[operand_a]
-            index_return = self.pc + 2
+        def handle_CALL(operand_a, operand_b):  # Calls a subroutine (function) at the address stored in the register.
+            index_call = self.register[operand_a]   # The address of the instruction directly after CALL is pushed onto the stack.
+            index_return = self.pc + 2  # The PC is set to the address stored in the given register.
             self.sp -= 1
             self.ram[self.sp] = index_return
             self.pc = index_call
 
-        def handleRET(operand_a, operand_b):
+        def handle_RET(operand_a, operand_b):   # Return from subroutine. Pop the value from the top of the stack and store it in the PC.
             self.pc = self.ram[self.sp]
             self.sp += 1
 
-        operations = {
-            LDI: handleLDI,
-            ADD: handleADD,
-            SUB: handleSUB,
-            MUL: handleMUL,
-            DIV: handleDIV,
-            PRN: handlePRN,
-            PUSH: handlePUSH,
-            POP: handlePOP,
-            CALL: handleCALL,
-            RET: handleRET
+        operations = {  # quick access to all the operations via dictionary. lookup will be constant instead of O(n) now
+            LDI: handle_LDI,
+            ADD: handle_ADD,
+            SUB: handle_SUB,
+            MUL: handle_MUL,
+            DIV: handle_DIV,
+            PRN: handle_PRN,
+            PUSH: handle_PUSH,
+            POP: handle_POP,
+            CALL: handle_CALL,
+            RET: handle_RET
         }
 
         while True:
