@@ -13,8 +13,10 @@ PUSH = 0b01000101
 POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
-# CMP = 0b10100111
-#       00000LGE
+CMP = 0b10100111
+JEQ = 0b01010101
+JNE = 0b01010110
+JMP = 0b01010100
 
 class CPU:
     """Main CPU class."""
@@ -187,6 +189,18 @@ class CPU:
             self.pc = self.ram[self.sp]
             self.sp += 1
 
+        def handle_CMP(operand_a, operand_b):
+            pass
+
+        def handle_JEQ(operand_a, operand_b):
+            pass
+
+        def handle_JNE(operand_a, operand_b):
+            pass
+
+        def handle_JMP(operand_a, operand_b):
+            pass
+
         operations = {  # quick access to all the operations via dictionary. lookup will be constant instead of O(n) now
             LDI: handle_LDI,
             ADD: handle_ADD,
@@ -197,7 +211,11 @@ class CPU:
             PUSH: handle_PUSH,
             POP: handle_POP,
             CALL: handle_CALL,
-            RET: handle_RET
+            RET: handle_RET,
+            CMP: handle_CMP,
+            JEQ: handle_JEQ,
+            JNE: handle_JNE,
+            JMP: handle_JMP
         }
 
         while True:
