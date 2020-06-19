@@ -2,6 +2,20 @@
 
 import sys
 
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
+ADD = 0b10100000
+SUB = 0b10100001
+MUL = 0b10100010
+DIV = 0b10100011
+PUSH = 0b01000101
+POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+# CMP = 0b10100111
+#       00000LGE
+
 class CPU:
     """Main CPU class."""
 
@@ -9,7 +23,6 @@ class CPU:
         self.ram = [0] * 256        # 256 bytes of memory
         self.register = [0] * 8     # 8 registers
         self.pc = 0                 # program counter
-        # self.halted = False         # if halted or not (T/F)
         self.sp = 7                 # stack pointer
         self.running = True         # if running or not (T/F)
 
@@ -42,15 +55,15 @@ class CPU:
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
 
         # for instruction in program:
         #     self.ram[address] = instruction
@@ -68,6 +81,9 @@ class CPU:
             self.register[reg_a] *= self.register[reg_b]
         elif op == "DIV":
             self.register[reg_a] /= self.register[reg_b]
+        # elif op == "CMP":
+        #   if self.register[reg_a] < self.register[reg_b]:
+        #   
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -96,64 +112,104 @@ class CPU:
         # Program counter, the index (address) of the current instruction
         # Reads the memory address that's stored in register
 
-        LDI = 0b10000010
-        PRN = 0b01000111
-        HLT = 0b00000001
-        ADD = 0b10100000
-        SUB = 0b10100001
-        MUL = 0b10100010
-        DIV = 0b10100011
-        PUSH = 0b01000101
-        POP = 0b01000110
+        # while self.running:
+        #     ir = self.ram[self.pc]
+        
+        ## change all the self.ram pc+1 to operand_a, and self.ram pc+2 to operand_b
+        def handleLDI(operand_a, operand_b):
+            # address = self.ram[self.pc + 1]
+            # value = self.ram[self.pc + 2]
+            self.register[operand_a] = operand_b
+            self.pc += 3
 
-        while self.running:
-        # Stores the result in "Instruction Register" from the memory (RAM) address in PC
+        def handleADD(operand_a, operand_b):
+            # self.alu("ADD", self.ram[self.pc + 1], self.ram[self.pc + 2])
+            value1 = self.register[operand_a]
+            value2 = self.register[operand_b]
+            self.register[operand_a] = value1 + value2
+            self.pc += 3
+
+        def handleSUB(operand_a, operand_b):
+            # self.alu("SUB", self.ram[self.pc + 1], self.ram[self.pc + 2])
+            value1 = self.register[operand_a]
+            value2 = self.register[operand_b]
+            self.register[operand_a] = value1 - value2
+            self.pc += 3
+
+        def handleMUL(operand_a, operand_b):
+            # self.alu("MUL", self.ram[self.pc + 1], self.ram[self.pc + 2])
+            value1 = self.register[operand_a]
+            value2 = self.register[operand_b]
+            self.register[operand_a] = value1 * value2
+            self.pc += 3
+
+        def handleDIV(operand_a, operand_b):
+            # self.alu("DIV", self.ram[self.pc + 1], self.ram[self.pc + 2])
+            value1 = self.register[operand_a]
+            value2 = self.register[operand_b]
+            self.register[operand_a] = value1 / value2
+            self.pc += 3
+
+        def handlePRN(operand_a, operand_b=None):
+            # address = self.ram[self.pc + 1]
+            print(self.register[operand_a])
+            self.pc += 2
+
+        def handlePUSH(operand_a=None, operand_b=None):
+            register = self.ram_read(self.pc + 1)
+            value = self.register[register]
+            self.sp = self.sp - 1
+            self.ram[self.sp] = value
+            self.pc += 2
+
+        def handlePOP(operand_a=None, operand_b=None):
+            # if self.sp == 0xF4:
+            #     return "Stack is empty."
+            register = self.ram_read(self.pc + 1)
+            value = self.ram[self.sp]
+            self.register[register] = value
+            self.sp += 1
+            self.pc += 2
+
+        def handleCALL(operand_a, operand_b):
+            index_call = self.register[operand_a]
+            index_return = self.pc + 2
+            self.sp -= 1
+            self.ram[self.sp] = index_return
+            self.pc = index_call
+
+        def handleRET(operand_a, operand_b):
+            self.pc = self.ram[self.sp]
+            self.sp += 1
+
+        operations = {
+            LDI: handleLDI,
+            ADD: handleADD,
+            SUB: handleSUB,
+            MUL: handleMUL,
+            DIV: handleDIV,
+            PRN: handlePRN,
+            PUSH: handlePUSH,
+            POP: handlePOP,
+            CALL: handleCALL,
+            RET: handleRET
+        }
+
+        while True:
             ir = self.ram[self.pc]
-            # `LDI` instruction (EX: SAVE_REG in comp.py)
-            if ir == LDI:
-                address = self.ram[self.pc + 1]
-                value = self.ram[self.pc + 2]
-                self.register[address] = value
-                self.pc += 3
-            elif ir == ADD:
-                self.alu("ADD", self.ram[self.pc + 1], self.ram[self.pc + 2])
-                self.pc += 3
-            elif ir == SUB:
-                self.alu("SUB", self.ram[self.pc + 1], self.ram[self.pc + 2])
-                self.pc += 3
-            elif ir == MUL:
-                self.alu("MUL", self.ram[self.pc + 1], self.ram[self.pc + 2])
-                self.pc += 3
-            elif ir == DIV:
-                self.alu("DIV", self.ram[self.pc + 1], self.ram[self.pc + 2])
-                self.pc += 3
-            # `PRN` instruction (EX: PRINT_REG in comp.py)
-            elif ir == PRN:
-                address = self.ram[self.pc + 1]
-                print(self.register[address])
-                self.pc += 2
-            # `HLT` instruction (EX: HALT in comp.py)
-            elif ir == HLT:
-                self.running = False
-                self.pc += 1
-            elif ir == PUSH:
-                self.sp = self.sp - 1
-                self.ram[self.sp] = self.register[self.ram[self.pc + 1]]
-                self.pc += 2
-            elif ir == POP:
-                if self.sp == 0xF4:
-                    return "Stack is empty."
-                self.register[self.ram[self.pc + 1]] = self.ram[self.sp]
-                self.sp = self.sp + 1
-                self.pc += 2
-        # ELSE STATEMENT from comp.py
-            else:
-                print(f'Unknown instruction {ir} at address {self.pc}')
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+
+            if ir == HLT:
                 break
-        # self.trace()
+            else:
+                if operations[ir]:
+                    operations[ir](operand_a, operand_b)
+                else:
+                    print(f'Unknown instruction: {ir}')
+                    break
 
-# cpu = CPU()
 
-# cpu.load()
+cpu = CPU()
 # cpu.load()
 # cpu.run()
