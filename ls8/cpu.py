@@ -27,6 +27,8 @@ class CPU:
         self.pc = 0                 # program counter
         self.sp = 7                 # stack pointer
         self.running = True         # if running or not (T/F)
+        self.flag = 0b00000000      # set flag to default 0, compare later and change LGE at 00000LGE
+        # self.flag = 0b00000111
 
     def ram_read(self, address):
         return self.ram[address]
@@ -189,17 +191,30 @@ class CPU:
             self.pc = self.ram[self.sp]
             self.sp += 1
 
-        def handle_CMP(operand_a, operand_b):
-            pass
+        def handle_CMP(operand_a, operand_b):   # Compare the values in two registers. LGE
+            value1 = self.register[operand_a]
+            value2 = self.register[operand_b]
+            if value1 < value2:
+                self.flag = 0b00000100
+            if value1 > value2:
+                self.flag = 0b00000010
+            if value1 == value2:
+                self.flag = 0b00000001
+            self.pc += 3    # one op with two values
 
-        def handle_JEQ(operand_a, operand_b):
-            pass
+        def handle_JEQ(operand_a, operand_b):   # If equal flag is set (true), jump to the address stored in the given register.
+            jump = self.register[operand_a]
+            if self.flag == 0b00000001:
+                self.pc = jump
 
-        def handle_JNE(operand_a, operand_b):
-            pass
+        def handle_JNE(operand_a, operand_b):   # If E flag is clear (false, 0), jump to the address stored in the given register.
+            jump = self.register[operand_a]
+            if self.flag != 0b00000001:
+                self.pc = jump
 
-        def handle_JMP(operand_a, operand_b):
-            pass
+        def handle_JMP(operand_a, operand_b):   # Jump to the address stored in the given register. 
+            jump = self.register[operand_a]
+            self.pc = jump  # Set the PC to the address stored in the given register.
 
         operations = {  # quick access to all the operations via dictionary. lookup will be constant instead of O(n) now
             LDI: handle_LDI,
