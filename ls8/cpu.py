@@ -206,11 +206,15 @@ class CPU:
             jump = self.register[operand_a]
             if self.flag == 0b00000001:
                 self.pc = jump
+            else:
+                self.pc += 2    # forgot pc incrementers
 
         def handle_JNE(operand_a, operand_b):   # If E flag is clear (false, 0), jump to the address stored in the given register.
             jump = self.register[operand_a]
             if self.flag != 0b00000001:
                 self.pc = jump
+            else:
+                self.pc += 2    # forgot pc incrementers
 
         def handle_JMP(operand_a, operand_b):   # Jump to the address stored in the given register. 
             jump = self.register[operand_a]
